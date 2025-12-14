@@ -1,0 +1,78 @@
+syntax = "proto3";
+
+package telemetry.gateway;
+
+// Telemetry Gateway Service
+// Handles incoming telemetry data from medical devices
+service TelemetryGateway {
+  // SendMeasurements: Device -> Gateway
+  // Receives raw measurements from medical devices
+  rpc SendMeasurements (SendMeasurementsRequest) returns (SendMeasurementsResponse);
+}
+
+// Request to send measurements from a device
+message SendMeasurementsRequest {
+  // Version of the message schema
+  string version = 1;
+  
+  // Device identifier
+  string device_id = 2;
+  
+  // Optional device type
+  string device_type = 3;
+  
+  // ISO 8601 timestamp when measurements were taken
+  string timestamp = 4;
+  
+  // Array of measurements
+  repeated Measurement measurements = 5;
+  
+  // Optional device metadata
+  map<string, string> device_metadata = 6;
+}
+
+// Individual measurement from a device
+message Measurement {
+  // Metric name (e.g., "systolic_pressure", "heart_rate")
+  string metric = 1;
+  
+  // Numeric value
+  double value = 2;
+  
+  // Unit of measurement (e.g., "mmHg", "bpm", "fahrenheit")
+  string unit = 3;
+  
+  // ISO 8601 timestamp for this specific measurement (optional, defaults to request timestamp)
+  string measurement_timestamp = 4;
+  
+  // Optional raw device-specific data
+  map<string, string> raw_data = 5;
+}
+
+// Response to SendMeasurements
+message SendMeasurementsResponse {
+  // Version of the response schema
+  string version = 1;
+  
+  // Status of the operation
+  Status status = 2;
+  
+  // Optional message
+  string message = 3;
+  
+  // Event ID if measurements were successfully ingested
+  string event_id = 4;
+  
+  // ISO 8601 timestamp of the response
+  string timestamp = 5;
+}
+
+// Status enumeration
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+  STATUS_SUCCESS = 1;
+  STATUS_VALIDATION_ERROR = 2;
+  STATUS_DEVICE_NOT_FOUND = 3;
+  STATUS_INTERNAL_ERROR = 4;
+}
+

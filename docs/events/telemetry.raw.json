@@ -1,0 +1,128 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Telemetry Raw Event",
+  "description": "Raw telemetry data from medical devices",
+  "type": "object",
+  "required": [
+    "event_id",
+    "event_type",
+    "timestamp",
+    "device_id",
+    "measurements"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "description": "Unique identifier for this event",
+      "example": "evt_550e8400-e29b-41d4-a716-446655440000"
+    },
+    "event_type": {
+      "type": "string",
+      "enum": ["telemetry.raw"],
+      "description": "Event type identifier",
+      "example": "telemetry.raw"
+    },
+    "version": {
+      "type": "string",
+      "description": "Schema version",
+      "example": "1.0.0",
+      "default": "1.0.0"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when the event was created",
+      "example": "2024-01-15T10:30:00.000Z"
+    },
+    "device_id": {
+      "type": "string",
+      "description": "Unique identifier of the medical device",
+      "example": "device_12345"
+    },
+    "device_type": {
+      "type": "string",
+      "description": "Type of medical device",
+      "example": "blood_pressure_monitor"
+    },
+    "measurements": {
+      "type": "array",
+      "description": "Array of raw measurements from the device",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["metric", "value", "unit"],
+        "properties": {
+          "metric": {
+            "type": "string",
+            "description": "Name of the metric being measured",
+            "example": "systolic_pressure"
+          },
+          "value": {
+            "type": "number",
+            "description": "Raw numeric value from the device",
+            "example": 120.5
+          },
+          "unit": {
+            "type": "string",
+            "description": "Unit of measurement",
+            "example": "mmHg"
+          },
+          "raw_data": {
+            "type": "object",
+            "description": "Optional raw device-specific data payload",
+            "additionalProperties": true
+          }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Optional metadata about the device or transmission",
+      "additionalProperties": true,
+      "properties": {
+        "firmware_version": {
+          "type": "string",
+          "example": "v2.1.3"
+        },
+        "battery_level": {
+          "type": "number",
+          "example": 85
+        },
+        "signal_strength": {
+          "type": "number",
+          "example": -65
+        }
+      }
+    }
+  },
+  "example": {
+    "event_id": "evt_550e8400-e29b-41d4-a716-446655440000",
+    "event_type": "telemetry.raw",
+    "version": "1.0.0",
+    "timestamp": "2024-01-15T10:30:00.000Z",
+    "device_id": "device_12345",
+    "device_type": "blood_pressure_monitor",
+    "measurements": [
+      {
+        "metric": "systolic_pressure",
+        "value": 120.5,
+        "unit": "mmHg",
+        "raw_data": {
+          "sensor_id": "sensor_001",
+          "calibration_date": "2024-01-01"
+        }
+      },
+      {
+        "metric": "diastolic_pressure",
+        "value": 80.0,
+        "unit": "mmHg"
+      }
+    ],
+    "metadata": {
+      "firmware_version": "v2.1.3",
+      "battery_level": 85,
+      "signal_strength": -65
+    }
+  }
+}
+

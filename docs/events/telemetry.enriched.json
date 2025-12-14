@@ -1,0 +1,291 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Telemetry Enriched Event",
+  "description": "Enriched telemetry data with patient context and historical data",
+  "type": "object",
+  "required": [
+    "event_id",
+    "event_type",
+    "timestamp",
+    "patient_id",
+    "vitals",
+    "patient_context"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "description": "Unique identifier for this event",
+      "example": "evt_770e8400-e29b-41d4-a716-446655440002"
+    },
+    "event_type": {
+      "type": "string",
+      "enum": ["telemetry.enriched"],
+      "description": "Event type identifier",
+      "example": "telemetry.enriched"
+    },
+    "version": {
+      "type": "string",
+      "description": "Schema version",
+      "example": "1.0.0",
+      "default": "1.0.0"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when the event was created",
+      "example": "2024-01-15T10:30:00.000Z"
+    },
+    "source_event_id": {
+      "type": "string",
+      "description": "Event ID of the normalized telemetry event that was enriched",
+      "example": "evt_660e8400-e29b-41d4-a716-446655440001"
+    },
+    "device_id": {
+      "type": "string",
+      "description": "Unique identifier of the medical device",
+      "example": "device_12345"
+    },
+    "patient_id": {
+      "type": "string",
+      "description": "Unique identifier of the patient",
+      "example": "patient_78901"
+    },
+    "patient_context": {
+      "type": "object",
+      "description": "Patient demographic and medical context",
+      "required": ["patient_id"],
+      "properties": {
+        "patient_id": {
+          "type": "string",
+          "example": "patient_78901"
+        },
+        "age": {
+          "type": "integer",
+          "description": "Patient age in years",
+          "example": 45
+        },
+        "gender": {
+          "type": "string",
+          "enum": ["male", "female", "other", "unknown"],
+          "example": "male"
+        },
+        "medical_conditions": {
+          "type": "array",
+          "description": "List of known medical conditions",
+          "items": {
+            "type": "string"
+          },
+          "example": ["hypertension", "diabetes_type_2"]
+        },
+        "medications": {
+          "type": "array",
+          "description": "List of current medications",
+          "items": {
+            "type": "string"
+          },
+          "example": ["lisinopril", "metformin"]
+        },
+        "allergies": {
+          "type": "array",
+          "description": "List of known allergies",
+          "items": {
+            "type": "string"
+          },
+          "example": ["penicillin"]
+        }
+      }
+    },
+    "vitals": {
+      "type": "object",
+      "description": "Normalized vital signs measurements (same structure as normalized event)",
+      "properties": {
+        "heart_rate": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "number",
+              "example": 72
+            },
+            "unit": {
+              "type": "string",
+              "example": "bpm"
+            },
+            "timestamp": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2024-01-15T10:30:00.000Z"
+            }
+          }
+        },
+        "blood_pressure": {
+          "type": "object",
+          "properties": {
+            "systolic": {
+              "type": "number",
+              "example": 120
+            },
+            "diastolic": {
+              "type": "number",
+              "example": 80
+            },
+            "unit": {
+              "type": "string",
+              "example": "mmHg"
+            },
+            "timestamp": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2024-01-15T10:30:00.000Z"
+            }
+          }
+        },
+        "temperature": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "number",
+              "example": 98.6
+            },
+            "unit": {
+              "type": "string",
+              "example": "fahrenheit"
+            },
+            "timestamp": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2024-01-15T10:30:00.000Z"
+            }
+          }
+        },
+        "oxygen_saturation": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "number",
+              "example": 98
+            },
+            "unit": {
+              "type": "string",
+              "example": "percent"
+            },
+            "timestamp": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2024-01-15T10:30:00.000Z"
+            }
+          }
+        },
+        "respiratory_rate": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "number",
+              "example": 16
+            },
+            "unit": {
+              "type": "string",
+              "example": "breaths_per_minute"
+            },
+            "timestamp": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2024-01-15T10:30:00.000Z"
+            }
+          }
+        }
+      }
+    },
+    "historical_context": {
+      "type": "object",
+      "description": "Historical data for comparison",
+      "properties": {
+        "baseline_vitals": {
+          "type": "object",
+          "description": "Patient's baseline vital signs",
+          "additionalProperties": true
+        },
+        "recent_trends": {
+          "type": "object",
+          "description": "Recent trends in vital signs",
+          "additionalProperties": true
+        },
+        "last_24h_summary": {
+          "type": "object",
+          "description": "Summary of vital signs over last 24 hours",
+          "properties": {
+            "heart_rate": {
+              "type": "object",
+              "properties": {
+                "min": {"type": "number"},
+                "max": {"type": "number"},
+                "avg": {"type": "number"}
+              }
+            }
+          }
+        }
+      }
+    },
+    "enrichment_metadata": {
+      "type": "object",
+      "description": "Metadata about the enrichment process",
+      "properties": {
+        "enriched_at": {
+          "type": "string",
+          "format": "date-time",
+          "example": "2024-01-15T10:30:02.000Z"
+        },
+        "enrichment_sources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "example": ["patient_registry", "historical_data"]
+        }
+      }
+    }
+  },
+  "example": {
+    "event_id": "evt_770e8400-e29b-41d4-a716-446655440002",
+    "event_type": "telemetry.enriched",
+    "version": "1.0.0",
+    "timestamp": "2024-01-15T10:30:00.000Z",
+    "source_event_id": "evt_660e8400-e29b-41d4-a716-446655440001",
+    "device_id": "device_12345",
+    "patient_id": "patient_78901",
+    "patient_context": {
+      "patient_id": "patient_78901",
+      "age": 45,
+      "gender": "male",
+      "medical_conditions": ["hypertension", "diabetes_type_2"],
+      "medications": ["lisinopril", "metformin"],
+      "allergies": ["penicillin"]
+    },
+    "vitals": {
+      "blood_pressure": {
+        "systolic": 120,
+        "diastolic": 80,
+        "unit": "mmHg",
+        "timestamp": "2024-01-15T10:30:00.000Z"
+      },
+      "heart_rate": {
+        "value": 72,
+        "unit": "bpm",
+        "timestamp": "2024-01-15T10:30:00.000Z"
+      }
+    },
+    "historical_context": {
+      "baseline_vitals": {
+        "heart_rate": 70,
+        "blood_pressure": {
+          "systolic": 115,
+          "diastolic": 75
+        }
+      }
+    },
+    "enrichment_metadata": {
+      "enriched_at": "2024-01-15T10:30:02.000Z",
+      "enrichment_sources": ["patient_registry", "historical_data"]
+    }
+  }
+}
+

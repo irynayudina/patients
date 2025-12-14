@@ -1,0 +1,264 @@
+syntax = "proto3";
+
+package anomaly;
+
+// Anomaly Detection Service
+// Scores vital signs for anomalies using ML models or rule-based systems
+service AnomalyDetection {
+  // ScoreVitals: Rules/ML -> Anomaly Service
+  // Scores vital signs measurements for anomalies
+  rpc ScoreVitals (ScoreVitalsRequest) returns (ScoreVitalsResponse);
+}
+
+// Request to score vital signs
+message ScoreVitalsRequest {
+  // Version of the request schema
+  string version = 1;
+  
+  // Patient identifier
+  string patient_id = 2;
+  
+  // Device identifier
+  string device_id = 3;
+  
+  // ISO 8601 timestamp when vitals were measured
+  string timestamp = 4;
+  
+  // Vital signs to score
+  VitalSigns vitals = 5;
+  
+  // Optional patient context for scoring
+  PatientContext patient_context = 6;
+  
+  // Optional historical context
+  HistoricalContext historical_context = 7;
+}
+
+// Vital signs measurements
+message VitalSigns {
+  // Heart rate measurement
+  VitalMeasurement heart_rate = 1;
+  
+  // Blood pressure measurement
+  BloodPressureMeasurement blood_pressure = 2;
+  
+  // Temperature measurement
+  VitalMeasurement temperature = 3;
+  
+  // Oxygen saturation measurement
+  VitalMeasurement oxygen_saturation = 4;
+  
+  // Respiratory rate measurement
+  VitalMeasurement respiratory_rate = 5;
+}
+
+// Single vital sign measurement
+message VitalMeasurement {
+  // Numeric value
+  double value = 1;
+  
+  // Unit of measurement
+  string unit = 2;
+  
+  // ISO 8601 timestamp for this measurement
+  string timestamp = 3;
+}
+
+// Blood pressure measurement (systolic and diastolic)
+message BloodPressureMeasurement {
+  // Systolic pressure
+  double systolic = 1;
+  
+  // Diastolic pressure
+  double diastolic = 2;
+  
+  // Unit (typically "mmHg")
+  string unit = 3;
+  
+  // ISO 8601 timestamp for this measurement
+  string timestamp = 4;
+}
+
+// Patient context for scoring
+message PatientContext {
+  // Patient age in years
+  int32 age = 1;
+  
+  // Patient gender
+  Gender gender = 2;
+  
+  // List of medical conditions
+  repeated string medical_conditions = 3;
+  
+  // List of current medications
+  repeated string medications = 4;
+  
+  // Baseline vital signs (optional)
+  VitalSigns baseline_vitals = 5;
+}
+
+// Historical context for scoring
+message HistoricalContext {
+  // Recent trend data (optional)
+  map<string, TrendData> trends = 1;
+  
+  // Last 24 hours summary (optional)
+  map<string, SummaryStats> last_24h_summary = 2;
+}
+
+// Trend data for a vital sign
+message TrendData {
+  // Array of recent values
+  repeated double values = 1;
+  
+  // Array of corresponding timestamps (ISO 8601)
+  repeated string timestamps = 2;
+  
+  // Trend direction
+  TrendDirection direction = 3;
+}
+
+// Trend direction enumeration
+enum TrendDirection {
+  TREND_UNSPECIFIED = 0;
+  TREND_STABLE = 1;
+  TREND_INCREASING = 2;
+  TREND_DECREASING = 3;
+  TREND_VOLATILE = 4;
+}
+
+// Summary statistics
+message SummaryStats {
+  // Minimum value
+  double min = 1;
+  
+  // Maximum value
+  double max = 2;
+  
+  // Average value
+  double avg = 3;
+  
+  // Standard deviation
+  double std_dev = 4;
+  
+  // Number of samples
+  int32 sample_count = 5;
+}
+
+// Gender enumeration
+enum Gender {
+  GENDER_UNSPECIFIED = 0;
+  GENDER_MALE = 1;
+  GENDER_FEMALE = 2;
+  GENDER_OTHER = 3;
+}
+
+// Response with anomaly scores
+message ScoreVitalsResponse {
+  // Version of the response schema
+  string version = 1;
+  
+  // Status of the operation
+  Status status = 2;
+  
+  // Patient identifier
+  string patient_id = 3;
+  
+  // ISO 8601 timestamp of the response
+  string timestamp = 4;
+  
+  // Anomaly scores for each vital sign
+  AnomalyScores anomaly_scores = 5;
+  
+  // Overall risk score
+  RiskScore overall_risk_score = 6;
+  
+  // Optional message
+  string message = 7;
+  
+  // Metadata about the scoring process
+  ScoringMetadata metadata = 8;
+}
+
+// Anomaly scores for vital signs
+message AnomalyScores {
+  // Heart rate anomaly score
+  AnomalyScore heart_rate = 1;
+  
+  // Blood pressure anomaly score
+  AnomalyScore blood_pressure = 2;
+  
+  // Temperature anomaly score
+  AnomalyScore temperature = 3;
+  
+  // Oxygen saturation anomaly score
+  AnomalyScore oxygen_saturation = 4;
+  
+  // Respiratory rate anomaly score
+  AnomalyScore respiratory_rate = 5;
+}
+
+// Anomaly score for a single vital sign
+message AnomalyScore {
+  // Score value (0.0 = normal, 1.0 = highly anomalous)
+  double score = 1;
+  
+  // Severity level
+  Severity severity = 2;
+  
+  // Version of the scoring model used
+  string model_version = 3;
+  
+  // Factors contributing to the score
+  repeated string factors = 4;
+  
+  // Optional detailed explanation
+  string explanation = 5;
+}
+
+// Severity enumeration
+enum Severity {
+  SEVERITY_UNSPECIFIED = 0;
+  SEVERITY_NORMAL = 1;
+  SEVERITY_LOW = 2;
+  SEVERITY_MEDIUM = 3;
+  SEVERITY_HIGH = 4;
+  SEVERITY_CRITICAL = 5;
+}
+
+// Overall risk score
+message RiskScore {
+  // Combined risk score (0.0 = low risk, 1.0 = high risk)
+  double score = 1;
+  
+  // Overall severity level
+  Severity severity = 2;
+  
+  // Method used to aggregate scores
+  string aggregation_method = 3;
+}
+
+// Scoring metadata
+message ScoringMetadata {
+  // ISO 8601 timestamp when scoring was performed
+  string scored_at = 1;
+  
+  // Scoring engine identifier
+  string scoring_engine = 2;
+  
+  // Scoring engine version
+  string scoring_engine_version = 3;
+  
+  // Processing time in milliseconds
+  double processing_time_ms = 4;
+}
+
+// Status enumeration
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+  STATUS_SUCCESS = 1;
+  STATUS_INVALID_REQUEST = 2;
+  STATUS_MODEL_ERROR = 3;
+  STATUS_INTERNAL_ERROR = 4;
+}
+

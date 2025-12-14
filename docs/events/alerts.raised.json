@@ -1,0 +1,285 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Alert Raised Event",
+  "description": "Alert event raised when anomaly scores exceed thresholds or critical conditions are detected",
+  "type": "object",
+  "required": [
+    "event_id",
+    "event_type",
+    "timestamp",
+    "patient_id",
+    "alert_type",
+    "severity",
+    "condition"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "description": "Unique identifier for this alert event",
+      "example": "alert_990e8400-e29b-41d4-a716-446655440004"
+    },
+    "event_type": {
+      "type": "string",
+      "enum": ["alerts.raised"],
+      "description": "Event type identifier",
+      "example": "alerts.raised"
+    },
+    "version": {
+      "type": "string",
+      "description": "Schema version",
+      "example": "1.0.0",
+      "default": "1.0.0"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when the alert was raised",
+      "example": "2024-01-15T10:30:05.000Z"
+    },
+    "source_event_id": {
+      "type": "string",
+      "description": "Event ID of the scored telemetry event that triggered this alert",
+      "example": "evt_880e8400-e29b-41d4-a716-446655440003"
+    },
+    "patient_id": {
+      "type": "string",
+      "description": "Unique identifier of the patient",
+      "example": "patient_78901"
+    },
+    "device_id": {
+      "type": "string",
+      "description": "Unique identifier of the medical device",
+      "example": "device_12345"
+    },
+    "alert_type": {
+      "type": "string",
+      "enum": [
+        "vital_sign_anomaly",
+        "threshold_exceeded",
+        "device_malfunction",
+        "patient_not_responding",
+        "critical_condition",
+        "trend_anomaly",
+        "multi_vital_anomaly"
+      ],
+      "description": "Type of alert",
+      "example": "vital_sign_anomaly"
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["low", "medium", "high", "critical"],
+      "description": "Severity level of the alert",
+      "example": "medium"
+    },
+    "condition": {
+      "type": "object",
+      "description": "Details about the condition that triggered the alert",
+      "required": ["description"],
+      "properties": {
+        "description": {
+          "type": "string",
+          "description": "Human-readable description of the condition",
+          "example": "Heart rate elevated above baseline"
+        },
+        "vital_sign": {
+          "type": "string",
+          "enum": [
+            "heart_rate",
+            "blood_pressure",
+            "temperature",
+            "oxygen_saturation",
+            "respiratory_rate",
+            "multiple"
+          ],
+          "description": "Which vital sign(s) triggered the alert",
+          "example": "heart_rate"
+        },
+        "current_value": {
+          "type": "object",
+          "description": "Current value that triggered the alert",
+          "additionalProperties": true,
+          "properties": {
+            "value": {
+              "type": "number",
+              "example": 95
+            },
+            "unit": {
+              "type": "string",
+              "example": "bpm"
+            }
+          }
+        },
+        "threshold": {
+          "type": "object",
+          "description": "Threshold that was exceeded",
+          "properties": {
+            "value": {
+              "type": "number",
+              "example": 90
+            },
+            "unit": {
+              "type": "string",
+              "example": "bpm"
+            },
+            "threshold_type": {
+              "type": "string",
+              "enum": ["upper", "lower", "range"],
+              "example": "upper"
+            }
+          }
+        },
+        "anomaly_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Anomaly score that triggered the alert",
+          "example": 0.75
+        }
+      }
+    },
+    "recommended_actions": {
+      "type": "array",
+      "description": "Recommended actions for healthcare providers",
+      "items": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "example": "Contact patient immediately"
+          },
+          "priority": {
+            "type": "string",
+            "enum": ["low", "medium", "high", "urgent"],
+            "example": "high"
+          },
+          "reason": {
+            "type": "string",
+            "example": "Heart rate consistently elevated"
+          }
+        }
+      }
+    },
+    "patient_context": {
+      "type": "object",
+      "description": "Relevant patient context at time of alert",
+      "properties": {
+        "age": {
+          "type": "integer",
+          "example": 45
+        },
+        "medical_conditions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "example": ["hypertension", "diabetes_type_2"]
+        },
+        "current_medications": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "example": ["lisinopril", "metformin"]
+        }
+      }
+    },
+    "alert_metadata": {
+      "type": "object",
+      "description": "Metadata about the alert",
+      "properties": {
+        "raised_by": {
+          "type": "string",
+          "description": "Service or system that raised the alert",
+          "example": "anomaly_detection_service"
+        },
+        "rule_id": {
+          "type": "string",
+          "description": "ID of the rule that triggered the alert",
+          "example": "rule_hr_threshold_001"
+        },
+        "rule_version": {
+          "type": "string",
+          "example": "1.2.0"
+        },
+        "acknowledged": {
+          "type": "boolean",
+          "description": "Whether the alert has been acknowledged",
+          "example": false,
+          "default": false
+        },
+        "acknowledged_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp when alert was acknowledged",
+          "example": "2024-01-15T10:35:00.000Z"
+        },
+        "acknowledged_by": {
+          "type": "string",
+          "description": "User or system that acknowledged the alert",
+          "example": "nurse_jane_doe"
+        },
+        "resolved": {
+          "type": "boolean",
+          "description": "Whether the alert condition has been resolved",
+          "example": false,
+          "default": false
+        },
+        "resolved_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp when alert was resolved"
+        }
+      }
+    }
+  },
+  "example": {
+    "event_id": "alert_990e8400-e29b-41d4-a716-446655440004",
+    "event_type": "alerts.raised",
+    "version": "1.0.0",
+    "timestamp": "2024-01-15T10:30:05.000Z",
+    "source_event_id": "evt_880e8400-e29b-41d4-a716-446655440003",
+    "patient_id": "patient_78901",
+    "device_id": "device_12345",
+    "alert_type": "vital_sign_anomaly",
+    "severity": "medium",
+    "condition": {
+      "description": "Heart rate elevated above baseline and threshold",
+      "vital_sign": "heart_rate",
+      "current_value": {
+        "value": 95,
+        "unit": "bpm"
+      },
+      "threshold": {
+        "value": 90,
+        "unit": "bpm",
+        "threshold_type": "upper"
+      },
+      "anomaly_score": 0.75
+    },
+    "recommended_actions": [
+      {
+        "action": "Contact patient to check current status",
+        "priority": "high",
+        "reason": "Heart rate consistently elevated above normal range"
+      },
+      {
+        "action": "Review recent medication changes",
+        "priority": "medium",
+        "reason": "Possible medication interaction"
+      }
+    ],
+    "patient_context": {
+      "age": 45,
+      "medical_conditions": ["hypertension", "diabetes_type_2"],
+      "current_medications": ["lisinopril", "metformin"]
+    },
+    "alert_metadata": {
+      "raised_by": "anomaly_detection_service",
+      "rule_id": "rule_hr_threshold_001",
+      "rule_version": "1.2.0",
+      "acknowledged": false,
+      "resolved": false
+    }
+  }
+}
+

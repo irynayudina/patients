@@ -46,10 +46,14 @@ for proto_file in "$PROTO_DIR"/*.proto; do
     echo "Processing $filename.proto..."
     
     # Generate TypeScript definitions using ts-proto
+    # Options configured for @grpc/grpc-js compatibility
     protoc \
       --plugin=protoc-gen-ts_proto="$TS_PROTO_PLUGIN" \
       --ts_proto_out="$OUT_DIR" \
       --ts_proto_opt=nestJs=true \
+      --ts_proto_opt=useExactTypes=false \
+      --ts_proto_opt=esModuleInterop=true \
+      --ts_proto_opt=outputServices=grpc-js \
       --ts_proto_opt=fileSuffix=.pb \
       --proto_path="$PROTO_DIR" \
       "$proto_file"

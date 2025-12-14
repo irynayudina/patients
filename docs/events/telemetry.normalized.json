@@ -1,0 +1,216 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Telemetry Normalized Event",
+  "description": "Normalized telemetry data after validation and standardization",
+  "type": "object",
+  "required": [
+    "event_id",
+    "event_type",
+    "timestamp",
+    "device_id",
+    "patient_id",
+    "vitals"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "description": "Unique identifier for this event",
+      "example": "evt_660e8400-e29b-41d4-a716-446655440001"
+    },
+    "event_type": {
+      "type": "string",
+      "enum": ["telemetry.normalized"],
+      "description": "Event type identifier",
+      "example": "telemetry.normalized"
+    },
+    "version": {
+      "type": "string",
+      "description": "Schema version",
+      "example": "1.0.0",
+      "default": "1.0.0"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when the event was created",
+      "example": "2024-01-15T10:30:00.000Z"
+    },
+    "source_event_id": {
+      "type": "string",
+      "description": "Event ID of the raw telemetry event that was normalized",
+      "example": "evt_550e8400-e29b-41d4-a716-446655440000"
+    },
+    "device_id": {
+      "type": "string",
+      "description": "Unique identifier of the medical device",
+      "example": "device_12345"
+    },
+    "patient_id": {
+      "type": "string",
+      "description": "Unique identifier of the patient",
+      "example": "patient_78901"
+    },
+    "vitals": {
+      "type": "object",
+      "description": "Normalized vital signs measurements",
+      "required": [],
+      "properties": {
+        "heart_rate": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "number",
+              "description": "Heart rate in beats per minute",
+              "example": 72
+            },
+            "unit": {
+              "type": "string",
+              "example": "bpm"
+            },
+            "timestamp": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2024-01-15T10:30:00.000Z"
+            }
+          }
+        },
+        "blood_pressure": {
+          "type": "object",
+          "properties": {
+            "systolic": {
+              "type": "number",
+              "description": "Systolic pressure in mmHg",
+              "example": 120
+            },
+            "diastolic": {
+              "type": "number",
+              "description": "Diastolic pressure in mmHg",
+              "example": 80
+            },
+            "unit": {
+              "type": "string",
+              "example": "mmHg"
+            },
+            "timestamp": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2024-01-15T10:30:00.000Z"
+            }
+          }
+        },
+        "temperature": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "number",
+              "description": "Body temperature",
+              "example": 98.6
+            },
+            "unit": {
+              "type": "string",
+              "example": "fahrenheit"
+            },
+            "timestamp": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2024-01-15T10:30:00.000Z"
+            }
+          }
+        },
+        "oxygen_saturation": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "number",
+              "description": "SpO2 percentage",
+              "example": 98
+            },
+            "unit": {
+              "type": "string",
+              "example": "percent"
+            },
+            "timestamp": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2024-01-15T10:30:00.000Z"
+            }
+          }
+        },
+        "respiratory_rate": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "number",
+              "description": "Respiratory rate per minute",
+              "example": 16
+            },
+            "unit": {
+              "type": "string",
+              "example": "breaths_per_minute"
+            },
+            "timestamp": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2024-01-15T10:30:00.000Z"
+            }
+          }
+        }
+      }
+    },
+    "validation_status": {
+      "type": "string",
+      "enum": ["valid", "warning", "invalid"],
+      "description": "Validation status of the normalized data",
+      "example": "valid"
+    },
+    "normalization_metadata": {
+      "type": "object",
+      "description": "Metadata about the normalization process",
+      "properties": {
+        "normalized_at": {
+          "type": "string",
+          "format": "date-time",
+          "example": "2024-01-15T10:30:01.000Z"
+        },
+        "normalization_rules_version": {
+          "type": "string",
+          "example": "1.2.0"
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "example": {
+    "event_id": "evt_660e8400-e29b-41d4-a716-446655440001",
+    "event_type": "telemetry.normalized",
+    "version": "1.0.0",
+    "timestamp": "2024-01-15T10:30:00.000Z",
+    "source_event_id": "evt_550e8400-e29b-41d4-a716-446655440000",
+    "device_id": "device_12345",
+    "patient_id": "patient_78901",
+    "vitals": {
+      "blood_pressure": {
+        "systolic": 120,
+        "diastolic": 80,
+        "unit": "mmHg",
+        "timestamp": "2024-01-15T10:30:00.000Z"
+      },
+      "heart_rate": {
+        "value": 72,
+        "unit": "bpm",
+        "timestamp": "2024-01-15T10:30:00.000Z"
+      }
+    },
+    "validation_status": "valid",
+    "normalization_metadata": {
+      "normalized_at": "2024-01-15T10:30:01.000Z",
+      "normalization_rules_version": "1.2.0"
+    }
+  }
+}
+

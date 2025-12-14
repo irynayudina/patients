@@ -1,0 +1,389 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Telemetry Scored Event",
+  "description": "Telemetry data with anomaly scores from ML/rules engine",
+  "type": "object",
+  "required": [
+    "event_id",
+    "event_type",
+    "timestamp",
+    "patient_id",
+    "vitals",
+    "anomaly_scores"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "description": "Unique identifier for this event",
+      "example": "evt_880e8400-e29b-41d4-a716-446655440003"
+    },
+    "event_type": {
+      "type": "string",
+      "enum": ["telemetry.scored"],
+      "description": "Event type identifier",
+      "example": "telemetry.scored"
+    },
+    "version": {
+      "type": "string",
+      "description": "Schema version",
+      "example": "1.0.0",
+      "default": "1.0.0"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when the event was created",
+      "example": "2024-01-15T10:30:00.000Z"
+    },
+    "source_event_id": {
+      "type": "string",
+      "description": "Event ID of the enriched telemetry event that was scored",
+      "example": "evt_770e8400-e29b-41d4-a716-446655440002"
+    },
+    "device_id": {
+      "type": "string",
+      "description": "Unique identifier of the medical device",
+      "example": "device_12345"
+    },
+    "patient_id": {
+      "type": "string",
+      "description": "Unique identifier of the patient",
+      "example": "patient_78901"
+    },
+    "vitals": {
+      "type": "object",
+      "description": "Vital signs measurements (same structure as enriched event)",
+      "properties": {
+        "heart_rate": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "number",
+              "example": 72
+            },
+            "unit": {
+              "type": "string",
+              "example": "bpm"
+            },
+            "timestamp": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2024-01-15T10:30:00.000Z"
+            }
+          }
+        },
+        "blood_pressure": {
+          "type": "object",
+          "properties": {
+            "systolic": {
+              "type": "number",
+              "example": 120
+            },
+            "diastolic": {
+              "type": "number",
+              "example": 80
+            },
+            "unit": {
+              "type": "string",
+              "example": "mmHg"
+            },
+            "timestamp": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2024-01-15T10:30:00.000Z"
+            }
+          }
+        },
+        "temperature": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "number",
+              "example": 98.6
+            },
+            "unit": {
+              "type": "string",
+              "example": "fahrenheit"
+            },
+            "timestamp": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2024-01-15T10:30:00.000Z"
+            }
+          }
+        },
+        "oxygen_saturation": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "number",
+              "example": 98
+            },
+            "unit": {
+              "type": "string",
+              "example": "percent"
+            },
+            "timestamp": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2024-01-15T10:30:00.000Z"
+            }
+          }
+        },
+        "respiratory_rate": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "number",
+              "example": 16
+            },
+            "unit": {
+              "type": "string",
+              "example": "breaths_per_minute"
+            },
+            "timestamp": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2024-01-15T10:30:00.000Z"
+            }
+          }
+        }
+      }
+    },
+    "anomaly_scores": {
+      "type": "object",
+      "description": "Anomaly scores for each vital sign",
+      "required": [],
+      "properties": {
+        "heart_rate": {
+          "type": "object",
+          "properties": {
+            "score": {
+              "type": "number",
+              "description": "Anomaly score (0.0 = normal, 1.0 = highly anomalous)",
+              "minimum": 0,
+              "maximum": 1,
+              "example": 0.15
+            },
+            "severity": {
+              "type": "string",
+              "enum": ["normal", "low", "medium", "high", "critical"],
+              "description": "Severity level based on score",
+              "example": "normal"
+            },
+            "model_version": {
+              "type": "string",
+              "description": "Version of the scoring model used",
+              "example": "1.3.0"
+            },
+            "factors": {
+              "type": "array",
+              "description": "Factors contributing to the score",
+              "items": {
+                "type": "string"
+              },
+              "example": ["baseline_deviation", "rate_of_change"]
+            }
+          }
+        },
+        "blood_pressure": {
+          "type": "object",
+          "properties": {
+            "score": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "example": 0.25
+            },
+            "severity": {
+              "type": "string",
+              "enum": ["normal", "low", "medium", "high", "critical"],
+              "example": "low"
+            },
+            "model_version": {
+              "type": "string",
+              "example": "1.3.0"
+            },
+            "factors": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "example": ["systolic_elevation", "diastolic_elevation"]
+            }
+          }
+        },
+        "temperature": {
+          "type": "object",
+          "properties": {
+            "score": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "example": 0.05
+            },
+            "severity": {
+              "type": "string",
+              "enum": ["normal", "low", "medium", "high", "critical"],
+              "example": "normal"
+            },
+            "model_version": {
+              "type": "string",
+              "example": "1.3.0"
+            },
+            "factors": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "oxygen_saturation": {
+          "type": "object",
+          "properties": {
+            "score": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "example": 0.10
+            },
+            "severity": {
+              "type": "string",
+              "enum": ["normal", "low", "medium", "high", "critical"],
+              "example": "normal"
+            },
+            "model_version": {
+              "type": "string",
+              "example": "1.3.0"
+            },
+            "factors": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "respiratory_rate": {
+          "type": "object",
+          "properties": {
+            "score": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "example": 0.20
+            },
+            "severity": {
+              "type": "string",
+              "enum": ["normal", "low", "medium", "high", "critical"],
+              "example": "low"
+            },
+            "model_version": {
+              "type": "string",
+              "example": "1.3.0"
+            },
+            "factors": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "overall_risk_score": {
+      "type": "object",
+      "description": "Overall risk assessment combining all vital signs",
+      "properties": {
+        "score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "example": 0.18
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["normal", "low", "medium", "high", "critical"],
+          "example": "low"
+        },
+        "aggregation_method": {
+          "type": "string",
+          "example": "weighted_average"
+        }
+      }
+    },
+    "scoring_metadata": {
+      "type": "object",
+      "description": "Metadata about the scoring process",
+      "properties": {
+        "scored_at": {
+          "type": "string",
+          "format": "date-time",
+          "example": "2024-01-15T10:30:03.000Z"
+        },
+        "scoring_engine": {
+          "type": "string",
+          "example": "anomaly_detection_v2"
+        },
+        "scoring_engine_version": {
+          "type": "string",
+          "example": "2.1.0"
+        },
+        "processing_time_ms": {
+          "type": "number",
+          "example": 45.2
+        }
+      }
+    }
+  },
+  "example": {
+    "event_id": "evt_880e8400-e29b-41d4-a716-446655440003",
+    "event_type": "telemetry.scored",
+    "version": "1.0.0",
+    "timestamp": "2024-01-15T10:30:00.000Z",
+    "source_event_id": "evt_770e8400-e29b-41d4-a716-446655440002",
+    "device_id": "device_12345",
+    "patient_id": "patient_78901",
+    "vitals": {
+      "blood_pressure": {
+        "systolic": 120,
+        "diastolic": 80,
+        "unit": "mmHg",
+        "timestamp": "2024-01-15T10:30:00.000Z"
+      },
+      "heart_rate": {
+        "value": 72,
+        "unit": "bpm",
+        "timestamp": "2024-01-15T10:30:00.000Z"
+      }
+    },
+    "anomaly_scores": {
+      "heart_rate": {
+        "score": 0.15,
+        "severity": "normal",
+        "model_version": "1.3.0",
+        "factors": ["baseline_deviation"]
+      },
+      "blood_pressure": {
+        "score": 0.25,
+        "severity": "low",
+        "model_version": "1.3.0",
+        "factors": ["systolic_elevation"]
+      }
+    },
+    "overall_risk_score": {
+      "score": 0.18,
+      "severity": "low",
+      "aggregation_method": "weighted_average"
+    },
+    "scoring_metadata": {
+      "scored_at": "2024-01-15T10:30:03.000Z",
+      "scoring_engine": "anomaly_detection_v2",
+      "scoring_engine_version": "2.1.0",
+      "processing_time_ms": 45.2
+    }
+  }
+}
+
