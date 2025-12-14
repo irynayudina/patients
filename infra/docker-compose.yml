@@ -326,6 +326,47 @@ services:
       start_period: 30s
     restart: unless-stopped
 
+  # Notification Service
+  notification-service:
+    build:
+      context: ..
+      dockerfile: services/notification-service/Dockerfile
+    container_name: notification-service
+    ports:
+      - "${NOTIFICATION_SERVICE_PORT:-3004}:3004"
+    environment:
+      PORT: 3004
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-patient_monitoring}
+      KAFKA_BROKERS: kafka:29092
+      KAFKA_CLIENT_ID: notification-service
+      KAFKA_CONSUMER_GROUP: notification-service-group
+      KAFKA_TOPIC_ALERTS: alerts.raised
+      KAFKA_CONNECTION_RETRY_ATTEMPTS: 10
+      KAFKA_CONNECTION_RETRY_DELAY: 5000
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis}
+      REDIS_ENABLED: "true"
+      RATE_LIMIT_WINDOW_MS: 60000
+      RATE_LIMIT_MAX_NOTIFICATIONS: 10
+      LOG_LEVEL: info
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - patient-monitoring-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3004/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
 volumes:
   kafka-data:
     driver: local

@@ -1,0 +1,32 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Notification {
+  id          String   @id @default(uuid())
+  patientId   String   @map("patient_id")
+  alertId     String?  @map("alert_id")
+  channel     String   // EMAIL, SMS, PUSH
+  status      String   @default("PENDING") // PENDING, SENT, FAILED
+  subject     String?
+  message     String
+  metadata    Json?    // Additional alert/notification metadata
+  sentAt      DateTime? @map("sent_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("notifications")
+  @@index([patientId])
+  @@index([channel])
+  @@index([status])
+  @@index([createdAt])
+}
+
