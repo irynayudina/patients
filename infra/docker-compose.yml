@@ -104,6 +104,34 @@ services:
       start_period: 30s
     restart: unless-stopped
 
+  # Telemetry Normalizer Service
+  telemetry-normalizer:
+    build:
+      context: ..
+      dockerfile: services/telemetry-normalizer/Dockerfile
+    container_name: telemetry-normalizer
+    ports:
+      - "${TELEMETRY_NORMALIZER_PORT:-8001}:8001"
+    environment:
+      PORT: 8001
+      KAFKA_BROKERS: kafka:29092
+      KAFKA_CLIENT_ID: telemetry-normalizer
+      KAFKA_CONSUMER_GROUP: telemetry-normalizer-group
+      KAFKA_TOPIC_RAW: telemetry.raw
+      KAFKA_TOPIC_NORMALIZED: telemetry.normalized
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - patient-monitoring-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8001/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
 volumes:
   kafka-data:
     driver: local
