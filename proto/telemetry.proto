@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package telemetry;
+
+// Telemetry service for medical data
+service TelemetryService {
+  // Send telemetry data
+  rpc SendTelemetry (TelemetryRequest) returns (TelemetryResponse);
+  
+  // Get telemetry data by ID
+  rpc GetTelemetry (GetTelemetryRequest) returns (TelemetryResponse);
+  
+  // Stream telemetry data
+  rpc StreamTelemetry (StreamTelemetryRequest) returns (stream TelemetryResponse);
+}
+
+// Telemetry request
+message TelemetryRequest {
+  string patient_id = 1;
+  string metric_name = 2;
+  double value = 3;
+  int64 timestamp = 4;
+  map<string, string> metadata = 5;
+}
+
+// Telemetry response
+message TelemetryResponse {
+  string id = 1;
+  string patient_id = 2;
+  string metric_name = 3;
+  double value = 4;
+  int64 timestamp = 5;
+  string status = 6;
+  string message = 7;
+}
+
+// Get telemetry request
+message GetTelemetryRequest {
+  string id = 1;
+}
+
+// Stream telemetry request
+message StreamTelemetryRequest {
+  string patient_id = 1;
+  int64 start_timestamp = 2;
+  int64 end_timestamp = 3;
+}
+
