@@ -367,6 +367,61 @@ services:
       start_period: 30s
     restart: unless-stopped
 
+  # Telemetry Gateway Service
+  telemetry-gateway:
+    build:
+      context: ..
+      dockerfile: services/telemetry-gateway/Dockerfile
+    container_name: telemetry-gateway
+    ports:
+      - "${TELEMETRY_GATEWAY_PORT:-3000}:3000"
+      - "${TELEMETRY_GATEWAY_GRPC_PORT:-50052}:50052"
+    environment:
+      PORT: 3000
+      GRPC_PORT: 50052
+      KAFKA_BROKERS: kafka:29092
+      KAFKA_CLIENT_ID: telemetry-gateway
+      KAFKA_TOPIC_RAW: telemetry.raw
+      REGISTRY_GRPC_URL: registry:50051
+      REGISTRY_ENABLED: "true"
+      LOG_LEVEL: info
+    depends_on:
+      kafka:
+        condition: service_healthy
+      registry:
+        condition: service_healthy
+    networks:
+      - patient-monitoring-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  # Device Simulator
+  device-simulator:
+    build:
+      context: ..
+      dockerfile: services/device-simulator/Dockerfile
+    container_name: device-simulator
+    environment:
+      REGISTRY_URL: http://registry:8000
+      GATEWAY_GRPC_URL: telemetry-gateway:50052
+      DEFAULT_DEVICES: ${SIMULATOR_DEVICES:-5}
+      DEFAULT_INTERVAL: ${SIMULATOR_INTERVAL:-5}
+      DEFAULT_EPISODE_RATE: ${SIMULATOR_EPISODE_RATE:-0.05}
+      LOG_LEVEL: ${SIMULATOR_LOG_LEVEL:-info}
+    depends_on:
+      registry:
+        condition: service_healthy
+      telemetry-gateway:
+        condition: service_healthy
+    networks:
+      - patient-monitoring-network
+    restart: "no"  # Don't auto-restart, run once per make simulate
+
 volumes:
   kafka-data:
     driver: local

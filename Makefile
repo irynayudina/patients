@@ -1,4 +1,4 @@
-.PHONY: help up down logs proto dev seed clean
+.PHONY: help up down logs proto dev seed clean simulate
 
 # Default target
 help:
@@ -12,6 +12,7 @@ help:
 	@echo "  make dev     - Start services in development mode"
 	@echo "  make seed    - Seed initial data"
 	@echo "  make clean   - Clean generated files and Docker resources"
+	@echo "  make simulate - Run device simulator (use DEVICES=N INTERVAL=X EPISODE_RATE=R)"
 
 # Start all services
 up:
@@ -56,4 +57,15 @@ rebuild:
 # Restart a specific service
 restart-%:
 	docker compose -f infra/docker-compose.yml restart $(subst restart-,,$@)
+
+# Run device simulator
+simulate:
+	@echo "Starting device simulator..."
+	@echo "Devices: ${DEVICES:-5}, Interval: ${INTERVAL:-5}s, Episode Rate: ${EPISODE_RATE:-0.05}"
+	docker compose -f infra/docker-compose.yml run --rm device-simulator \
+		python main.py \
+		--devices ${DEVICES:-5} \
+		--interval ${INTERVAL:-5} \
+		--episode-rate ${EPISODE_RATE:-0.05} \
+		--log-level ${LOG_LEVEL:-INFO}
 
