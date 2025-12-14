@@ -259,6 +259,39 @@ services:
       start_period: 30s
     restart: unless-stopped
 
+  # Incident Service
+  incident-service:
+    build:
+      context: ..
+      dockerfile: services/incident-service/Dockerfile
+    container_name: incident-service
+    ports:
+      - "${INCIDENT_SERVICE_PORT:-3003}:3003"
+    environment:
+      PORT: 3003
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-patient_monitoring}
+      KAFKA_BROKERS: kafka:29092
+      KAFKA_CLIENT_ID: incident-service
+      KAFKA_CONSUMER_GROUP: incident-service-group
+      KAFKA_TOPIC_ALERTS: alerts.raised
+      KAFKA_CONNECTION_RETRY_ATTEMPTS: 10
+      KAFKA_CONNECTION_RETRY_DELAY: 5000
+      LOG_LEVEL: info
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - patient-monitoring-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3003/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
 volumes:
   kafka-data:
     driver: local
