@@ -18,6 +18,11 @@
       "description": "Unique identifier for this alert event",
       "example": "alert_990e8400-e29b-41d4-a716-446655440004"
     },
+    "trace_id": {
+      "type": "string",
+      "description": "Correlation ID for tracing this event through the system",
+      "example": "trace_550e8400-e29b-41d4-a716-446655440000"
+    },
     "event_type": {
       "type": "string",
       "enum": ["alerts.raised"],
@@ -234,6 +239,7 @@
   },
   "example": {
     "event_id": "alert_990e8400-e29b-41d4-a716-446655440004",
+    "trace_id": "trace_550e8400-e29b-41d4-a716-446655440000",
     "event_type": "alerts.raised",
     "version": "1.0.0",
     "timestamp": "2024-01-15T10:30:05.000Z",

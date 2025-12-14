@@ -6,6 +6,7 @@ Consumes raw telemetry from Kafka, normalizes metrics, and produces normalized e
 import asyncio
 import json
 import logging
+import os
 import uuid
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional
@@ -17,13 +18,10 @@ from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
 from aiokafka.errors import KafkaError
 
 from config import settings
+from logging_config import setup_logging
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+# Configure standardized logging
+logger = setup_logging("telemetry-normalizer", os.getenv("LOG_LEVEL", "INFO"))
 
 # Global Kafka consumer and producer
 consumer: Optional[AIOKafkaConsumer] = None
@@ -136,6 +134,11 @@ def normalize_telemetry(raw_event: Dict[str, Any]) -> Dict[str, Any]:
     Returns:
         Normalized telemetry event
     """
+    # Extract trace_id from source event, or generate new one if missing
+    trace_id = raw_event.get('trace_id')
+    if not trace_id:
+        trace_id = f"trace_{uuid.uuid4().hex[:8]}-{uuid.uuid4().hex[:4]}-{uuid.uuid4().hex[:4]}-{uuid.uuid4().hex[:4]}-{uuid.uuid4().hex[:12]}"
+    
     # Parse and validate timestamp
     event_timestamp = parse_timestamp(raw_event.get('timestamp'))
     
@@ -227,6 +230,7 @@ def normalize_telemetry(raw_event: Dict[str, Any]) -> Dict[str, Any]:
     
     normalized_event = {
         'event_id': new_event_id,
+        'trace_id': trace_id,
         'event_type': 'telemetry.normalized',
         'version': raw_event.get('version', '1.0.0'),
         'timestamp': event_timestamp,
@@ -259,7 +263,10 @@ async def process_message(message) -> None:
         raw_event = json.loads(message.value.decode('utf-8'))
         event_id = raw_event.get('event_id', 'unknown')
         
-        logger.info(f"Consumed message from offset {offset} (partition {partition}), event_id: {event_id}")
+        logger.info(
+            f"Consumed message from offset {offset} (partition {partition})",
+            extra={"event_id": event_id, "trace_id": raw_event.get("trace_id")}
+        )
         
         # Normalize telemetry
         normalized_event = normalize_telemetry(raw_event)
@@ -275,7 +282,14 @@ async def process_message(message) -> None:
             value=json.dumps(normalized_event).encode('utf-8')
         )
         
-        logger.info(f"Produced normalized event, event_id: {normalized_event['event_id']}, source_event_id: {event_id}")
+        logger.info(
+            "Produced normalized event",
+            extra={
+                "event_id": normalized_event['event_id'],
+                "trace_id": normalized_event.get('trace_id'),
+                "source_event_id": event_id
+            }
+        )
         
     except json.JSONDecodeError as e:
         logger.error(f"Failed to parse JSON message at offset {offset} (partition {partition}): {e}")

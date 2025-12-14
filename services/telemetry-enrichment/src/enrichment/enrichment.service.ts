@@ -18,6 +18,7 @@ interface NormalizedTelemetryEvent {
 
 interface EnrichedTelemetryEvent {
   event_id: string;
+  trace_id: string;
   event_type: string;
   version: string;
   timestamp: string;
@@ -128,8 +129,12 @@ export class EnrichmentService {
       }
 
       // Step 3: Build enriched event
+      // Extract trace_id from source event, or generate new one if missing
+      const traceId = (normalizedEvent as any).trace_id || `trace_${uuidv4()}`;
+      
       const enrichedEvent: EnrichedTelemetryEvent = {
         event_id: uuidv4(),
+        trace_id: traceId,
         event_type: 'telemetry.enriched',
         version: normalizedEvent.version || '1.0.0',
         timestamp: new Date().toISOString(),
@@ -151,6 +156,7 @@ export class EnrichmentService {
 
       this.logger.log('Successfully enriched and produced telemetry event', {
         eventId: enrichedEvent.event_id,
+        traceId: enrichedEvent.trace_id,
         sourceEventId: normalizedEvent.event_id,
         deviceId,
         patientId: patientId || 'none',

@@ -195,11 +195,19 @@ FastAPI Service → Kafka Event → NestJS Service (Consumer) → Action
 - API authentication tokens
 - Network policies
 
-### Monitoring (Future Considerations)
+### Monitoring and Observability
 
-- Health check endpoints (`/health`)
-- Metrics collection
-- Distributed tracing
-- Log aggregation
-- Alerting
+- **Health Checks**: All services expose `/health` endpoints
+- **Structured Logging**: JSON-formatted logs with correlation IDs
+  - Python services: JSON structured logging with service name, timestamp, level, and correlation IDs
+  - NestJS services: Structured logging with correlation IDs in log context
+- **Event Correlation**: All Kafka events include `event_id` and `trace_id` for end-to-end tracing
+- **Distributed Tracing**: `trace_id` propagates through the entire event pipeline
+
+### Future Considerations
+
+- Metrics collection (Prometheus)
+- Centralized log aggregation (ELK stack)
+- Distributed tracing visualization (Jaeger)
+- Alerting and monitoring dashboards
 

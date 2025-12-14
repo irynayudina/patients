@@ -28,6 +28,7 @@ export class TelemetryService {
 
     this.logger.log('Telemetry processed successfully', {
       eventId: event.event_id,
+      traceId: event.trace_id,
       deviceId: dto.deviceId,
     });
 
@@ -39,6 +40,7 @@ export class TelemetryService {
 
   private transformToKafkaEvent(dto: TelemetryDto): any {
     const eventId = `evt_${uuidv4()}`;
+    const traceId = `trace_${uuidv4()}`;
     const timestamp = dto.timestamp || new Date().toISOString();
 
     // Transform metrics to measurements array
@@ -83,6 +85,7 @@ export class TelemetryService {
 
     return {
       event_id: eventId,
+      trace_id: traceId,
       event_type: 'telemetry.raw',
       version: '1.0.0',
       timestamp: timestamp,

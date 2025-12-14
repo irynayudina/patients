@@ -5,6 +5,7 @@ Consumes telemetry.enriched, applies rules, calls AnomalyService, and produces t
 import asyncio
 import json
 import logging
+import os
 import uuid
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional
@@ -18,13 +19,10 @@ from aiokafka.errors import KafkaError
 from config import settings
 from rules_engine import RulesEngine, RuleResult
 from anomaly_client import AnomalyClient
+from logging_config import setup_logging
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+# Configure standardized logging
+logger = setup_logging("rules-engine", os.getenv("LOG_LEVEL", "INFO"))
 
 # Global Kafka consumer and producer
 consumer: Optional[AIOKafkaConsumer] = None
@@ -49,8 +47,14 @@ def create_scored_event(enriched_event: Dict[str, Any], anomaly_result: Dict[str
     """Create telemetry.scored event from enriched event and anomaly scores"""
     scored_at = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
     
+    # Extract trace_id from source event, or generate new one if missing
+    trace_id = enriched_event.get('trace_id')
+    if not trace_id:
+        trace_id = f"trace_{uuid.uuid4().hex[:8]}-{uuid.uuid4().hex[:4]}-{uuid.uuid4().hex[:4]}-{uuid.uuid4().hex[:4]}-{uuid.uuid4().hex[:12]}"
+    
     scored_event = {
         "event_id": generate_event_id(),
+        "trace_id": trace_id,
         "event_type": "telemetry.scored",
         "version": enriched_event.get("version", "1.0.0"),
         "timestamp": enriched_event.get("timestamp"),
@@ -77,6 +81,11 @@ def create_alert_event(enriched_event: Dict[str, Any], scored_event: Dict[str, A
     """Create alerts.raised event"""
     alert_at = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
     
+    # Extract trace_id from scored event, or from enriched event, or generate new one
+    trace_id = scored_event.get('trace_id') or enriched_event.get('trace_id')
+    if not trace_id:
+        trace_id = f"trace_{uuid.uuid4().hex[:8]}-{uuid.uuid4().hex[:4]}-{uuid.uuid4().hex[:4]}-{uuid.uuid4().hex[:4]}-{uuid.uuid4().hex[:12]}"
+    
     # Determine alert type
     alert_type = "vital_sign_anomaly"
     if len(rules_triggered) > 1:
@@ -99,6 +108,7 @@ def create_alert_event(enriched_event: Dict[str, Any], scored_event: Dict[str, A
     
     alert_event = {
         "event_id": generate_alert_id(),
+        "trace_id": trace_id,
         "event_type": "alerts.raised",
         "version": "1.0.0",
         "timestamp": alert_at,
@@ -210,7 +220,13 @@ async def process_message(message) -> None:
             key=scored_event['device_id'].encode('utf-8'),
             value=json.dumps(scored_event).encode('utf-8')
         )
-        logger.info(f"Produced scored event: {scored_event['event_id']}")
+        logger.info(
+            "Produced scored event",
+            extra={
+                "event_id": scored_event['event_id'],
+                "trace_id": scored_event.get('trace_id')
+            }
+        )
         
         # Produce alerts.raised only when severity != OK
         if overall_severity != "OK":
@@ -228,7 +244,14 @@ async def process_message(message) -> None:
                 key=alert_event['patient_id'].encode('utf-8'),
                 value=json.dumps(alert_event).encode('utf-8')
             )
-            logger.warning(f"Produced alert event: {alert_event['event_id']}, severity={overall_severity}")
+            logger.warning(
+                f"Produced alert event, severity={overall_severity}",
+                extra={
+                    "event_id": alert_event['event_id'],
+                    "trace_id": alert_event.get('trace_id'),
+                    "severity": overall_severity
+                }
+            )
         
     except json.JSONDecodeError as e:
         logger.error(f"Failed to parse JSON message at offset {offset} (partition {partition}): {e}")
@@ -254,7 +277,7 @@ async def consume_messages():
         )
         
         await consumer.start()
-        logger.info(f"Started consuming from topic: {settings.kafka_topic_enriched}")
+        logger.info(f"Started consuming from topic: {settings.kafka_topic_enriched}", extra={})
         
         try:
             async for message in consumer:

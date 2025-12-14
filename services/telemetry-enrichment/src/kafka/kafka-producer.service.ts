@@ -89,6 +89,7 @@ export class KafkaProducerService implements OnModuleInit, OnModuleDestroy {
 
         this.logger.debug(`Successfully produced enriched event to ${topic}`, {
           eventId: event.event_id,
+          traceId: event.trace_id,
           deviceId: event.device_id,
           patientId: event.patient_id,
           orphan: event.orphan || false,
@@ -99,6 +100,7 @@ export class KafkaProducerService implements OnModuleInit, OnModuleDestroy {
         this.logger.warn(`Failed to produce enriched event (attempt ${attempt}/${maxRetries})`, {
           error: error instanceof Error ? error.message : String(error),
           eventId: event.event_id,
+          traceId: event.trace_id,
         });
 
         if (attempt < maxRetries) {
@@ -111,6 +113,7 @@ export class KafkaProducerService implements OnModuleInit, OnModuleDestroy {
     this.logger.error(`Failed to produce enriched event after ${maxRetries} attempts`, {
       error: lastError?.message,
       eventId: event.event_id,
+      traceId: event.trace_id,
     });
     throw lastError || new Error('Failed to produce enriched event to Kafka');
   }

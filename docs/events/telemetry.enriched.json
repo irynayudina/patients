@@ -17,6 +17,11 @@
       "description": "Unique identifier for this event",
       "example": "evt_770e8400-e29b-41d4-a716-446655440002"
     },
+    "trace_id": {
+      "type": "string",
+      "description": "Correlation ID for tracing this event through the system",
+      "example": "trace_550e8400-e29b-41d4-a716-446655440000"
+    },
     "event_type": {
       "type": "string",
       "enum": ["telemetry.enriched"],
@@ -246,6 +251,7 @@
   },
   "example": {
     "event_id": "evt_770e8400-e29b-41d4-a716-446655440002",
+    "trace_id": "trace_550e8400-e29b-41d4-a716-446655440000",
     "event_type": "telemetry.enriched",
     "version": "1.0.0",
     "timestamp": "2024-01-15T10:30:00.000Z",
