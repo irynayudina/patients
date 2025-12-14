@@ -220,6 +220,45 @@ services:
       start_period: 30s
     restart: unless-stopped
 
+  # Rules Engine Service
+  rules-engine:
+    build:
+      context: ..
+      dockerfile: services/rules-engine/Dockerfile
+    container_name: rules-engine
+    ports:
+      - "${RULES_ENGINE_PORT:-8004}:8004"
+    environment:
+      PORT: 8004
+      KAFKA_BROKERS: kafka:29092
+      KAFKA_CLIENT_ID: rules-engine
+      KAFKA_CONSUMER_GROUP: rules-engine-group
+      KAFKA_TOPIC_ENRICHED: telemetry.enriched
+      KAFKA_TOPIC_SCORED: telemetry.scored
+      KAFKA_TOPIC_ALERTS: alerts.raised
+      ANOMALY_SERVICE_GRPC_URL: anomaly-service:50053
+      ANOMALY_SERVICE_TIMEOUT: 5
+      HR_MAX: ${HR_MAX:-100.0}
+      SPO2_MIN: ${SPO2_MIN:-95.0}
+      TEMP_MAX: ${TEMP_MAX:-100.4}
+      HR_VERY_HIGH: ${HR_VERY_HIGH:-120.0}
+      SPO2_LOW: ${SPO2_LOW:-90.0}
+      LOG_LEVEL: info
+    depends_on:
+      kafka:
+        condition: service_healthy
+      anomaly-service:
+        condition: service_healthy
+    networks:
+      - patient-monitoring-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8004/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
 volumes:
   kafka-data:
     driver: local
