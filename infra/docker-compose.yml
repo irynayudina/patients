@@ -292,6 +292,40 @@ services:
       start_period: 30s
     restart: unless-stopped
 
+  # Analytics Service
+  analytics:
+    build:
+      context: ..
+      dockerfile: services/analytics/Dockerfile
+    container_name: analytics
+    ports:
+      - "${ANALYTICS_PORT:-8005}:8005"
+    environment:
+      PORT: 8005
+      KAFKA_BROKERS: kafka:29092
+      KAFKA_CLIENT_ID: analytics
+      KAFKA_CONSUMER_GROUP: analytics-group
+      KAFKA_TOPIC_SCORED: telemetry.scored
+      KAFKA_TOPIC_ALERTS: alerts.raised
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis}
+      REDIS_DB: 0
+    depends_on:
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - patient-monitoring-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8005/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
 volumes:
   kafka-data:
     driver: local
