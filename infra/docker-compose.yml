@@ -189,6 +189,37 @@ services:
       - patient-monitoring-network
     restart: unless-stopped
 
+  # Anomaly Detection Service
+  anomaly-service:
+    build:
+      context: ..
+      dockerfile: services/anomaly-service/Dockerfile
+    container_name: anomaly-service
+    ports:
+      - "${ANOMALY_SERVICE_PORT:-8003}:8003"
+      - "${ANOMALY_SERVICE_GRPC_PORT:-50053}:50053"
+    environment:
+      PORT: 8003
+      GRPC_PORT: 50053
+      REDIS_ENABLED: "true"
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis}
+      BASELINE_WINDOW_SIZE: 100
+      MIN_BASELINE_SAMPLES: 10
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - patient-monitoring-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8003/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
 volumes:
   kafka-data:
     driver: local
