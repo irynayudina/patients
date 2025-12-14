@@ -104,6 +104,32 @@ services:
       start_period: 30s
     restart: unless-stopped
 
+  # Registry Service
+  registry:
+    build:
+      context: ..
+      dockerfile: services/registry/Dockerfile
+    container_name: registry
+    ports:
+      - "${REGISTRY_PORT:-8000}:8000"
+      - "${REGISTRY_GRPC_PORT:-50051}:50051"
+    environment:
+      PORT: 8000
+      GRPC_PORT: 50051
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-patient_monitoring}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - patient-monitoring-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
   # Telemetry Normalizer Service
   telemetry-normalizer:
     build:
@@ -130,6 +156,37 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+    restart: unless-stopped
+
+  # Telemetry Enrichment Service
+  telemetry-enrichment:
+    build:
+      context: ..
+      dockerfile: services/telemetry-enrichment/Dockerfile
+    container_name: telemetry-enrichment
+    ports:
+      - "${TELEMETRY_ENRICHMENT_PORT:-3002}:3002"
+    environment:
+      PORT: 3002
+      KAFKA_BROKERS: kafka:29092
+      KAFKA_CLIENT_ID: telemetry-enrichment
+      KAFKA_CONSUMER_GROUP: telemetry-enrichment-group
+      KAFKA_TOPIC_NORMALIZED: telemetry.normalized
+      KAFKA_TOPIC_ENRICHED: telemetry.enriched
+      REGISTRY_GRPC_URL: registry:50051
+      REGISTRY_ENABLED: "true"
+      REGISTRY_TIMEOUT_MS: 5000
+      REGISTRY_MAX_RETRIES: 3
+      REGISTRY_RETRY_DELAY_MS: 1000
+      GRACEFUL_SHUTDOWN_TIMEOUT_MS: 30000
+      LOG_LEVEL: info
+    depends_on:
+      kafka:
+        condition: service_healthy
+      registry:
+        condition: service_healthy
+    networks:
+      - patient-monitoring-network
     restart: unless-stopped
 
 volumes:
