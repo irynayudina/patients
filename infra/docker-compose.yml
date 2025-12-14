@@ -1,104 +1,118 @@
-version: '3.8'
-
 services:
-  # Zookeeper (required for Kafka)
-  zookeeper:
-    image: confluentinc/cp-zookeeper:7.5.0
-    container_name: zookeeper
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-    ports:
-      - "2181:2181"
-    networks:
-      - med-telemetry-network
-    healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "2181"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # Kafka
+  # Kafka (KRaft mode - no Zookeeper needed)
   kafka:
-    image: confluentinc/cp-kafka:7.5.0
+    image: bitnami/kafka:latest
     container_name: kafka
-    depends_on:
-      zookeeper:
-        condition: service_healthy
     ports:
-      - "9092:9092"
-      - "29092:29092"
+      - "${KAFKA_PORT:-9092}:9092"
+      - "${KAFKA_INTERNAL_PORT:-29092}:29092"
     environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      # KRaft mode configuration
+      KAFKA_CFG_NODE_ID: 1
+      KAFKA_CFG_PROCESS_ROLES: broker,controller
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CFG_LISTENERS: PLAINTEXT://0.0.0.0:29092,CONTROLLER://0.0.0.0:9093,EXTERNAL://0.0.0.0:9092
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,EXTERNAL://localhost:9092
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      # Auto-create topics
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
+      # Replication
+      KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      # Log retention
+      KAFKA_CFG_LOG_RETENTION_HOURS: 168
+      KAFKA_CFG_LOG_SEGMENT_BYTES: 1073741824
+      # Memory settings
+      KAFKA_HEAP_OPTS: "-Xmx512M -Xms512M"
+    volumes:
+      - kafka-data:/bitnami/kafka
     networks:
-      - med-telemetry-network
+      - patient-monitoring-network
     healthcheck:
-      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      test: ["CMD-SHELL", "kafka-broker-api-versions.sh --bootstrap-server localhost:9092 || exit 1"]
       interval: 10s
       timeout: 10s
       retries: 5
+      start_period: 30s
+    restart: unless-stopped
 
-  # NestJS Service
-  nestjs-service:
-    build:
-      context: ..
-      dockerfile: services/nestjs-service/Dockerfile
-    container_name: nestjs-service
+  # PostgreSQL 16
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-patient_monitoring}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - patient-monitoring-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # Redis 7
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redis} --appendonly yes
+    volumes:
+      - redis-data:/data
+    networks:
+      - patient-monitoring-network
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a redis ping | grep -q PONG || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # Kafka UI
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "${KAFKA_UI_PORT:-8080}:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      DYNAMIC_CONFIG_ENABLED: "true"
     depends_on:
       kafka:
         condition: service_healthy
-      zookeeper:
-        condition: service_healthy
-    ports:
-      - "${NESTJS_SERVICE_PORT:-3000}:3000"
-      - "${NESTJS_SERVICE_GRPC_PORT:-50051}:50051"
-    environment:
-      - KAFKA_BROKERS=kafka:29092
-      - ZOOKEEPER_HOSTS=zookeeper:2181
-      - PORT=3000
-      - GRPC_PORT=50051
-      - NODE_ENV=${NODE_ENV:-development}
-      - LOG_LEVEL=${LOG_LEVEL:-info}
     networks:
-      - med-telemetry-network
-    volumes:
-      - ../services/nestjs-service:/app
-      - /app/node_modules
-    command: npm run start:dev
+      - patient-monitoring-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
 
-  # FastAPI Service
-  fastapi-service:
-    build:
-      context: ..
-      dockerfile: services/fastapi-service/Dockerfile
-    container_name: fastapi-service
-    depends_on:
-      kafka:
-        condition: service_healthy
-      zookeeper:
-        condition: service_healthy
-    ports:
-      - "${FASTAPI_SERVICE_PORT:-8000}:8000"
-      - "${FASTAPI_SERVICE_GRPC_PORT:-50052}:50052"
-    environment:
-      - KAFKA_BROKERS=kafka:29092
-      - ZOOKEEPER_HOSTS=zookeeper:2181
-      - PORT=8000
-      - GRPC_PORT=50052
-      - LOG_LEVEL=${LOG_LEVEL:-info}
-    networks:
-      - med-telemetry-network
-    volumes:
-      - ../services/fastapi-service:/app
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+volumes:
+  kafka-data:
+    driver: local
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
 
 networks:
-  med-telemetry-network:
+  patient-monitoring-network:
     driver: bridge
-
+    name: patient-monitoring-network
